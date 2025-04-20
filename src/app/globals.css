@@ -455,7 +455,7 @@ ol {
 }
 
 .gallery-item-project-name {
-  color: #171717; /* Black text (using --foreground variable might be better) */
+  color: #171717;
 }
 
 /* Gallery Item Hover Effect - COMPLETE RULES */
