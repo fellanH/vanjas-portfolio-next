@@ -1,89 +1,108 @@
+"use client"; // Add use client directive
+
+import React, { useState, useEffect } from "react"; // Import hooks
 import Image from "next/image"; // Import next/image
 import { contentfulClient } from "@/lib/contentfulClient"; // Import the client
 import Navigation from "@/components/Navigation"; // Import the Navigation component
 // Import the existing ImageGallery component
 import ImageGallery from "@/components/ImageGallery";
 
-// Read Content Type ID from environment variable
-const CONTENTFUL_FEATURED_IMAGES_ID = process.env.CONTENTFUL_FEATURED_IMAGES_ID;
+// Renamed from HomePage, component is now a Client Component
+export default function Page() {
+  // State variables for gallery data, loading, and errors
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-// Renamed from HomePage, kept async for server-side data fetching
-export default async function Page() {
-  let featuredImageGallery = []; // Default to empty array
+  useEffect(() => {
+    const fetchFeaturedImages = async () => {
+      // Read the public environment variable client-side
+      const featuredImagesTypeId =
+        process.env.NEXT_PUBLIC_CONTENTFUL_FEATURED_IMAGES_ID;
 
-  // Validate Featured Images Type ID
-  if (!CONTENTFUL_FEATURED_IMAGES_ID) {
-    console.error(
-      "Runtime Error: CONTENTFUL_FEATURED_IMAGES_ID environment variable must be set."
-    );
-    // Handle error appropriately - perhaps show an error message component
-    // For now, we will render the page with an empty gallery.
-  } else {
-    try {
-      // Fetch the 'featuredImages' entry (expecting only one)
-      const response = await contentfulClient.getEntries({
-        content_type: CONTENTFUL_FEATURED_IMAGES_ID, // Use new env var
-        limit: 1, // Assuming only one entry of this type
-      });
-
-      // Extract the imageGallery from the first item, if it exists
-      if (response.items.length > 0 && response.items[0].fields.imageGallery) {
-        featuredImageGallery = response.items[0].fields.imageGallery;
-      } else {
-        console.warn(
-          "No 'featuredImages' entry found or it has no imageGallery field."
+      if (!featuredImagesTypeId) {
+        console.error(
+          "Client Error: NEXT_PUBLIC_CONTENTFUL_FEATURED_IMAGES_ID environment variable must be set."
         );
-      }
-    } catch (error) {
-      console.error("Failed to fetch featured images for homepage:", error);
-      // featuredImageGallery remains [], page will render without the gallery images
-      // Consider showing an error message to the user
-    }
-  }
-
-  // Map the fetched data to the format expected by ImageGallery
-  const galleryItems = (featuredImageGallery || [])
-    .map((imageAsset) => {
-      if (!imageAsset || !imageAsset.fields || !imageAsset.fields.file) {
-        console.warn(
-          "Skipping image due to missing asset data:",
-          imageAsset?.sys?.id
-        );
-        return null; // Skip this item
-      }
-      const fileDetails = imageAsset.fields.file;
-      if (
-        !fileDetails?.url ||
-        !fileDetails?.details?.image?.width ||
-        !fileDetails?.details?.image?.height
-      ) {
-        console.warn(
-          "Skipping image due to missing file data or dimensions:",
-          imageAsset?.sys?.id
-        );
-        return null; // Skip this item
+        setError("Configuration error: Featured images ID is missing.");
+        setLoading(false);
+        return;
       }
 
-      const imageUrl = "https:" + fileDetails.url;
-      const altText =
-        imageAsset.fields.description ||
-        imageAsset.fields.title ||
-        "Featured image";
-      const { width, height } = fileDetails.details.image;
+      setLoading(true);
+      setError(null);
 
-      return {
-        id: imageAsset.sys.id,
-        imageUrl: imageUrl,
-        altText: altText,
-        width: width,
-        height: height,
-        // Add projectName, projectSlug, categorySlug if needed and available
-        // projectName: imageAsset.fields.projectName || null,
-        // projectSlug: imageAsset.fields.projectSlug || null,
-        // categorySlug: imageAsset.fields.categorySlug || null,
-      };
-    })
-    .filter((item) => item !== null); // Remove null entries
+      try {
+        const response = await contentfulClient.getEntries({
+          content_type: featuredImagesTypeId, // Use the public env var value
+          limit: 1,
+        });
+
+        let fetchedGalleryData = [];
+        if (
+          response.items.length > 0 &&
+          response.items[0].fields.imageGallery
+        ) {
+          fetchedGalleryData = response.items[0].fields.imageGallery;
+        } else {
+          console.warn(
+            "No 'featuredImages' entry found or it has no imageGallery field."
+          );
+        }
+
+        // Map the fetched data inside the effect
+        const mappedItems = (fetchedGalleryData || [])
+          .map((imageAsset) => {
+            if (!imageAsset || !imageAsset.fields || !imageAsset.fields.file) {
+              console.warn(
+                "Skipping image due to missing asset data:",
+                imageAsset?.sys?.id
+              );
+              return null;
+            }
+            const fileDetails = imageAsset.fields.file;
+            if (
+              !fileDetails?.url ||
+              !fileDetails?.details?.image?.width ||
+              !fileDetails?.details?.image?.height
+            ) {
+              console.warn(
+                "Skipping image due to missing file data or dimensions:",
+                imageAsset?.sys?.id
+              );
+              return null;
+            }
+
+            const imageUrl = fileDetails.url.startsWith("//")
+              ? "https:" + fileDetails.url
+              : fileDetails.url; // Ensure protocol
+            const altText =
+              imageAsset.fields.description ||
+              imageAsset.fields.title ||
+              "Featured image";
+            const { width, height } = fileDetails.details.image;
+
+            return {
+              id: imageAsset.sys.id,
+              imageUrl: imageUrl,
+              altText: altText,
+              width: width,
+              height: height,
+            };
+          })
+          .filter((item) => item !== null);
+
+        setGalleryItems(mappedItems); // Update state with mapped items
+      } catch (err) {
+        console.error("Failed to fetch featured images for homepage:", err);
+        setError("Failed to load featured images.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedImages();
+  }, []); // Empty dependency array means this runs once on mount
 
   return (
     <div>
@@ -117,8 +136,15 @@ export default async function Page() {
           <h3 className="sub-desc">Selected Works</h3>
         </div>
       </div>
-      {/* Render the ImageGallery component with the mapped data */}
-      <ImageGallery items={galleryItems} enableLinks={false} />
+
+      {/* Conditionally render gallery based on state */}
+      {loading && <div className="text-center p-10">Loading gallery...</div>}
+      {error && (
+        <div className="text-center p-10 text-red-600">Error: {error}</div>
+      )}
+      {!loading && !error && (
+        <ImageGallery items={galleryItems} enableLinks={false} />
+      )}
     </div>
   );
 }
