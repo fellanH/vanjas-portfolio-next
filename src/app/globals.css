@@ -163,6 +163,51 @@ ol {
   padding-right: 2%;
 }
 
+/* Shimmer effect layer */
+.skeleton-loader {
+  opacity: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 5%,
+    rgba(230, 230, 230, 0.9) 50%,
+    rgba(255, 255, 255, 0) 95%
+  );
+  background-size: 200% 100%;
+  z-index: 2; /* Ensure it is above the background color */
+  animation: shimmer 1.5s infinite;
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+/* Hidden class for elements that should be visually hidden */
+.hidden {
+  display: none;
+}
+
+/* Fade transition classes */
+.fade-in {
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
 .page-head {
   grid-column-gap: 2rem;
   grid-row-gap: 2rem;
@@ -170,6 +215,7 @@ ol {
   grid-template-columns: 1fr 1fr 1fr 1fr;
   grid-auto-columns: 1fr;
   height: 20vh;
+  min-height: 9rem;
   padding-top: 2rem;
   padding-bottom: 3rem;
   display: grid;
@@ -254,6 +300,7 @@ ol {
   padding-bottom: 2vw;
   position: absolute;
   inset: 0%;
+  transition: opacity 0.5s ease-in-out;
 }
 
 .image {
@@ -301,6 +348,18 @@ ol {
   outline: none; /* Remove potential focus outlines */
 }
 
+/* Gallery image container with loading effect */
+.image-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: auto;
+}
+
+.aspect-ratio-square {
+  aspect-ratio: 1/1;
+}
+
 /* Keep the second definition of .gallery (from style.css) */
 .gallery {
   padding-top: 10rem;
@@ -310,9 +369,9 @@ ol {
 .image-2 {
   width: 100%;
   height: auto; /* Ensure aspect ratio is maintained */
-  /* margin-bottom: 4rem; */ /* Remove margin from image itself */
   display: block; /* Ensure image takes full width */
-  /* break-inside: avoid; */ /* This might be handled by the wrapper now */
+  position: relative;
+  z-index: 1;
 }
 
 .new_link {

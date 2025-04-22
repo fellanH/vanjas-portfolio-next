@@ -6,7 +6,6 @@ import { contentfulClient } from "@/lib/contentfulClient"; // Import the client
 import Navigation from "@/components/Navigation"; // Import the Navigation component
 // Import the existing ImageGallery component
 import ImageGallery from "@/components/ImageGallery";
-import ShimmerImage from "@/components/ShimmerImage"; // Changed import path
 
 // Renamed from HomePage, component is now a Client Component
 export default function Page() {
@@ -14,6 +13,7 @@ export default function Page() {
   const [galleryItems, setGalleryItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     const fetchFeaturedImages = async () => {
@@ -108,25 +108,20 @@ export default function Page() {
   return (
     <div>
       <div className="layout-1">
-        <ShimmerImage
-          src="/images/2-min.png"
-          width={2048}
-          height={1152}
-          sizes="(max-width: 2048px) 100vw, 2048px"
-          alt="Hero image 1"
-          className="image"
-          priority
-        />
-        <div className="parallax_image"></div>
         <div className="image-wrapper">
-          <ShimmerImage
+          <div
+            className={`skeleton-loader ${
+              imageLoaded ? "fade-out" : ""
+            }`}></div>
+          <Image
             src="/images/1-min.png"
             width={2048}
             height={1152}
             sizes="(max-width: 2048px) 100vw, 2048px"
             alt="Hero image 2"
-            className="main-image"
+            className={`main-image ${imageLoaded ? "fade-in" : "fade-out"}`}
             priority
+            onLoad={() => setImageLoaded(true)}
           />
           <div className="arrow">
             <div className="text-block">--&gt;</div>

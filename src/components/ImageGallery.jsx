@@ -1,8 +1,8 @@
 "use client"; // No longer needed for useState
 
-import React from "react";
+import React, { useState } from "react";
+import Image from "next/image"; // Reverted from ShimmerImage
 import Masonry from "react-masonry-css"; // Import Masonry
-import ShimmerImage from "./ShimmerImage"; // Changed from next/image
 
 // Define breakpoint columns for Masonry layout
 const breakpointColumnsObj = {
@@ -22,9 +22,19 @@ export default function ImageGallery({
   items = [],
   enableLinks = true, // Default to true if not specified
 }) {
+  // Track loading state for each image
+  const [loadedImages, setLoadedImages] = useState({});
+
   const getValidImageUrl = (url) => {
     if (!url) return "";
     return url.startsWith("//") ? `https:${url}` : url;
+  };
+
+  const handleImageLoad = (id) => {
+    setLoadedImages((prev) => ({
+      ...prev,
+      [id]: true,
+    }));
   };
 
   return (
@@ -44,19 +54,26 @@ export default function ImageGallery({
             return null;
           }
 
-          // Original Image component
+          // Original Image component with loading effect
           const originalImageElement = (
-            <ShimmerImage // Changed from Image
-              key={item.id} // Key needed here for plain image case
-              src={imageUrl}
-              alt={item.altText}
-              width={item.width}
-              height={item.height}
-              placeholder="blur"
-              blurDataURL={imageUrl + "?w=10&q=10&fm=webp"}
-              className="image-2" // Existing image class
-              // Remove style and onClick - will be handled by wrappers
-            />
+            <div className="image-container">
+              <div
+                className={`skeleton-loader ${
+                  loadedImages[item.id] ? "fade-out" : ""
+                }`}></div>
+              <Image // Reverted from ShimmerImage
+                src={imageUrl}
+                alt={item.altText}
+                width={item.width}
+                height={item.height}
+                placeholder="blur" // Restored placeholder
+                blurDataURL={imageUrl + "?w=10&q=10&fm=webp"} // Restored blurDataURL
+                className={`image-2 ${
+                  loadedImages[item.id] ? "fade-in" : "fade-out"
+                }`}
+                onLoad={() => handleImageLoad(item.id)}
+              />
+            </div>
           );
 
           // Hover Overlay Element (only if projectName exists)

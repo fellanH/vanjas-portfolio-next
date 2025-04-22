@@ -1,13 +1,12 @@
 "use client"; // Add use client directive
 
 import React, { useState, useEffect } from "react"; // Import hooks
-import Image from "next/image";
+import Image from "next/image"; // Reverted import
 import { documentToReactComponents } from "@contentful/rich-text-react-renderer";
 // Import the shared Contentful client configured for NEXT_PUBLIC_ variables
 import { contentfulClient } from "@/lib/contentfulClient";
 import { notFound } from "next/navigation";
 import Navigation from "@/components/Navigation"; // Keep Navigation if still needed visually
-import ShimmerImage from "@/components/ShimmerImage"; // Changed import path
 
 // Remove local client initialization and server-side env var checks
 // const spaceId = process.env.CONTENTFUL_SPACE_ID;
@@ -23,6 +22,7 @@ export default function AboutPage() {
   const [aboutData, setAboutData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     const fetchAboutData = async () => {
@@ -121,14 +121,27 @@ export default function AboutPage() {
         <div className="main-grid" style={{ paddingTop: "4rem" }}>
           <div className="grid-spacer"></div>
           {imageUrl && imageWidth && imageHeight ? (
-            <div>
-              <ShimmerImage
+            <div
+              className="image-container aspect-ratio-square"
+              style={{ position: "relative", overflow: "hidden" }}>
+              <div
+                className={`skeleton-loader ${
+                  imageLoaded ? "fade-out" : ""
+                }`}></div>
+              <Image
                 src={imageUrl.startsWith("//") ? `https:${imageUrl}` : imageUrl}
                 alt={imageAlt}
                 width={imageWidth}
                 height={imageHeight}
                 priority
-                style={{ width: "100%", height: "auto" }}
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  position: "relative",
+                  zIndex: 1,
+                }}
+                className={imageLoaded ? "fade-in" : "fade-out"}
+                onLoad={() => setImageLoaded(true)}
               />
             </div>
           ) : (
