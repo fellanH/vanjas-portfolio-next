@@ -1,11 +1,13 @@
 import { createClient } from "contentful";
 
-const space = process.env.CONTENTFUL_SPACE_ID;
-const accessToken = process.env.CONTENTFUL_ACCESS_TOKEN;
+// Use NEXT_PUBLIC_ prefixed variables for client-side access
+const space = process.env.NEXT_PUBLIC_CONTENTFUL_SPACE_ID;
+const accessToken = process.env.NEXT_PUBLIC_CONTENTFUL_ACCESS_TOKEN;
 
+// The check remains the same, but now checks the NEXT_PUBLIC_ variables
 if (!space || !accessToken) {
   throw new Error(
-    "Contentful Space ID and Access Token must be provided in environment variables"
+    "Contentful Space ID and Access Token must be provided using NEXT_PUBLIC_ prefix in environment variables"
   );
 }
 
