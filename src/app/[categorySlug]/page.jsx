@@ -1,78 +1,101 @@
-import React from "react";
-import { notFound } from "next/navigation";
+"use client"; // Add use client directive
+
+import React, { useState, useEffect } from "react"; // Import hooks
+import { notFound, useParams } from "next/navigation"; // Import useParams
 import {
-  contentfulClient, // Import base client for generateStaticParams
   getCategoryBySlug,
-  getProjectsByCategory, // Keep using getProjectsByCategory (requires category ID)
-} from "@/lib/contentfulClient"; // Use path alias
-import Navigation from "@/components/Navigation"; // Use path alias
-import ImageGallery from "@/components/ImageGallery"; // Use path alias
+  getProjectsByCategory,
+} from "@/lib/contentfulClient"; // Keep data fetching functions
+import Navigation from "@/components/Navigation";
+import ImageGallery from "@/components/ImageGallery";
 
-// Read Content Type ID from environment variable (ensure it's validated elsewhere or add validation here)
-const CONTENTFUL_CATEGORY_TYPE_ID = process.env.CONTENTFUL_CATEGORY_TYPE_ID;
+// Remove generateStaticParams function entirely
+// export async function generateStaticParams() { ... }
 
-// Fetch all category slugs at build time
-export async function generateStaticParams() {
-  // Add validation for the category type ID at build time
-  if (!CONTENTFUL_CATEGORY_TYPE_ID) {
-    console.error(
-      "Build Error: CONTENTFUL_CATEGORY_TYPE_ID environment variable must be set."
-    );
-    throw new Error(
-      "Missing CONTENTFUL_CATEGORY_TYPE_ID environment variable."
-    );
-  }
-
-  try {
-    const response = await contentfulClient.getEntries({
-      content_type: CONTENTFUL_CATEGORY_TYPE_ID, // Use env var
-      select: "fields.slug", // Only fetch the slug field
-    });
-
-    return response.items.map((category) => ({
-      categorySlug: category.fields.slug,
-    }));
-  } catch (error) {
-    console.error("Failed to generate static category paths:", error);
-    return []; // Return empty array on error to avoid build failure
-  }
-}
-
-export default async function CategoryPage({ params }) {
+export default function CategoryPage() {
+  // Remove params from props, use hook instead
+  const params = useParams(); // Get params using the hook
   const categorySlug = params.categorySlug;
-  let category;
-  let projects = []; // Default to empty array
 
-  try {
-    // Fetch the specific category details using the slug
-    category = await getCategoryBySlug(categorySlug);
-  } catch (error) {
-    console.error(`Failed to fetch category ${categorySlug}:`, error);
-    // Optionally, you could redirect to an error page or show a message
-    // For now, we'll proceed to notFound if category isn't fetched
-  }
+  // State variables
+  const [category, setCategory] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!category) {
-    notFound(); // Show 404 if category doesn't exist or fetch failed
-  }
+  useEffect(() => {
+    // Function to fetch data
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      let fetchedCategory = null; // Temp var for category
 
-  try {
-    // Fetch projects using the category's ID only if category was found
-    projects = await getProjectsByCategory(category.sys.id);
-  } catch (error) {
-    console.error(
-      `Failed to fetch projects for category ${category.sys.id}:`,
-      error
+      try {
+        // Fetch the specific category details using the slug
+        fetchedCategory = await getCategoryBySlug(categorySlug);
+
+        if (!fetchedCategory) {
+          // Use notFound directly if category fetch returns null/undefined
+          notFound();
+          return; // Stop execution if category not found
+        }
+
+        setCategory(fetchedCategory); // Set category state
+
+        // Fetch projects using the category's ID
+        const fetchedProjects = await getProjectsByCategory(
+          fetchedCategory.sys.id
+        );
+        setProjects(fetchedProjects || []); // Set projects state, default to empty array if fetch fails/returns null
+      } catch (err) {
+        console.error(
+          `Failed to fetch data for category ${categorySlug}:`,
+          err
+        );
+        setError("Failed to load category data.");
+        // Check if the error indicates "not found" specifically, otherwise show generic error
+        // If getCategoryBySlug throws a specific error for not found, handle it here
+        // For now, a general error message is set. We could call notFound() here too if appropriate.
+      } finally {
+        setLoading(false); // Set loading to false regardless of success/error
+      }
+    };
+
+    fetchData(); // Call the fetch function
+  }, [categorySlug]); // Re-run effect if categorySlug changes
+
+  // Handle loading state
+  if (loading) {
+    return (
+      <div className="page-wrapper">
+        <div className="main-wrapper flex justify-center items-center min-h-screen">
+          <p>Loading category...</p>
+        </div>
+      </div>
     );
-    // Projects will remain an empty array, showing a message might be good UX
   }
 
-  // Prepare items for the ImageGallery
+  // Handle error state
+  if (error) {
+    // Note: If notFound() was called in useEffect, this might not be reached
+    // depending on how Next.js handles notFound() in client components.
+    // Consider rendering a specific error component or message.
+    return (
+      <div className="page-wrapper">
+        <div className="main-wrapper flex justify-center items-center min-h-screen">
+          <p>Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Prepare items for the ImageGallery (only run if not loading/error)
   const galleryItems = projects
     .map((project) => {
       const firstImageAsset = project.fields.gallery?.[0];
       const pdfAsset = project.fields.pdf;
 
+      // Keep the existing validation logic
       if (
         !firstImageAsset?.fields?.file?.url ||
         !firstImageAsset?.fields?.file?.details?.image
@@ -110,9 +133,12 @@ export default async function CategoryPage({ params }) {
     })
     .filter((item) => item !== null);
 
+  // Render the gallery once data is loaded
   return (
     <div className="page-wrapper">
       <div className="main-wrapper">
+        {/* Optionally display category title or other info here */}
+        {/* <h1>{category?.fields?.title}</h1> */}
         <ImageGallery items={galleryItems} />
       </div>
     </div>
