@@ -1,66 +1,113 @@
-import React from "react";
+"use client"; // Add use client directive
+
+import React, { useState, useEffect } from "react"; // Import hooks
 import Image from "next/image";
 import { documentToReactComponents } from "@contentful/rich-text-react-renderer";
-import { createClient } from "contentful";
+// Import the shared Contentful client configured for NEXT_PUBLIC_ variables
+import { contentfulClient } from "@/lib/contentfulClient";
 import { notFound } from "next/navigation";
-import Navigation from "@/components/Navigation";
+import Navigation from "@/components/Navigation"; // Keep Navigation if still needed visually
 
-// Ensure environment variables are defined
-const spaceId = process.env.CONTENTFUL_SPACE_ID;
-const accessToken = process.env.CONTENTFUL_ACCESS_TOKEN;
-const contentTypeId = process.env.CONTENTFUL_CONTENT_TYPE_ID_ABOUT;
+// Remove local client initialization and server-side env var checks
+// const spaceId = process.env.CONTENTFUL_SPACE_ID;
+// ... etc ...
+// const client = createClient(...);
 
-if (!spaceId || !accessToken || !contentTypeId) {
-  throw new Error("Contentful environment variables are not set.");
-}
+// Remove server-side fetch function
+// async function getAboutData() { ... }
 
-// Initialize Contentful client
-const client = createClient({
-  space: spaceId,
-  accessToken: accessToken,
-});
+// This is now a Client Component
+export default function AboutPage() {
+  // State for about data, loading, and errors
+  const [aboutData, setAboutData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-// Fetch function (runs server-side)
-async function getAboutData() {
-  try {
-    const response = await client.getEntries({
-      content_type: contentTypeId,
-      "fields.slug": "about", // Fetch the entry with slug 'about'
-      limit: 1,
-      include: 1, // Include linked assets (the image)
-    });
+  useEffect(() => {
+    const fetchAboutData = async () => {
+      // Read the public environment variable client-side
+      const aboutContentTypeId =
+        process.env.NEXT_PUBLIC_CONTENTFUL_CONTENT_TYPE_ID_ABOUT;
 
-    if (response.items.length > 0) {
-      return response.items[0];
-    } else {
-      console.warn(
-        "No 'About' page entry found in Contentful with slug 'about'."
-      );
-      return null;
-    }
-  } catch (error) {
-    console.error("Error fetching data from Contentful:", error);
-    // Consider throwing an error or returning a specific state
+      if (!aboutContentTypeId) {
+        console.error(
+          "Client Error: NEXT_PUBLIC_CONTENTFUL_CONTENT_TYPE_ID_ABOUT environment variable must be set."
+        );
+        setError("Configuration error: About content type ID is missing.");
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Use the shared client to fetch data
+        const response = await contentfulClient.getEntries({
+          content_type: aboutContentTypeId,
+          "fields.slug": "about", // Fetch the entry with slug 'about'
+          limit: 1,
+          include: 1, // Include linked assets (the image)
+        });
+
+        if (response.items.length > 0) {
+          setAboutData(response.items[0]); // Set the entire entry
+        } else {
+          console.warn(
+            "No 'About' page entry found in Contentful with slug 'about'."
+          );
+          notFound(); // Trigger 404 if entry not found
+        }
+      } catch (err) {
+        console.error(
+          "Error fetching data from Contentful (client-side):",
+          err
+        );
+        setError("Failed to load about page data.");
+        // Optionally call notFound() here too
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAboutData();
+  }, []); // Empty dependency array, run once on mount
+
+  // Render loading state
+  if (loading) {
+    return (
+      <div className="page-wrapper">
+        <div className="main-wrapper flex justify-center items-center min-h-screen">
+          <p>Loading about information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Render error state
+  if (error) {
+    return (
+      <div className="page-wrapper">
+        <div className="main-wrapper flex justify-center items-center min-h-screen">
+          <p>Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Render 404 or null if data is missing (though notFound should handle this)
+  if (!aboutData) {
+    // This case might be redundant if notFound() is called correctly above
     return null;
   }
-}
 
-// This is now a Server Component
-export default async function AboutPage() {
-  const entry = await getAboutData();
-
-  // If no entry is found, render the 404 page
-  if (!entry) {
-    notFound();
-  }
-
-  const { profileImage, aboutMeLong, name } = entry.fields;
+  // Extract data from state once loaded
+  const { profileImage, aboutMeLong, name } = aboutData.fields;
 
   // Extract image details safely
   const imageUrl = profileImage?.fields?.file?.url;
   const imageWidth = profileImage?.fields?.file?.details?.image?.width;
   const imageHeight = profileImage?.fields?.file?.details?.image?.height;
-  // Prefer description for alt text, fall back to title, then name
   const imageAlt =
     profileImage?.fields?.description ||
     profileImage?.fields?.title ||
@@ -72,21 +119,22 @@ export default async function AboutPage() {
       <div className="main-wrapper">
         <div className="main-grid" style={{ paddingTop: "4rem" }}>
           <div className="grid-spacer"></div>
-          {imageUrl && imageWidth && imageHeight && (
+          {imageUrl && imageWidth && imageHeight ? (
             <div>
               <Image
-                // Ensure the URL starts with https:
                 src={imageUrl.startsWith("//") ? `https:${imageUrl}` : imageUrl}
                 alt={imageAlt}
                 width={imageWidth}
                 height={imageHeight}
-                priority // Prioritize loading the main image
+                priority
                 style={{ width: "100%", height: "auto" }}
               />
             </div>
+          ) : (
+            /* Optional: Placeholder if image missing */
+            <div>Image not available</div>
           )}
           <div>
-            {/* Render rich text or a default message */}
             {aboutMeLong ? (
               documentToReactComponents(aboutMeLong)
             ) : (
@@ -100,15 +148,5 @@ export default async function AboutPage() {
   );
 }
 
-// Optional: Add metadata generation
-export async function generateMetadata() {
-  const entry = await getAboutData();
-  const title = entry?.fields?.name || "About Me";
-  const description =
-    entry?.fields?.aboutMeShort || "Information about the site owner."; // Use the short description field
-
-  return {
-    title: title,
-    description: description,
-  };
-}
+// Remove generateMetadata as it's not used in Client Components
+// export async function generateMetadata() { ... }

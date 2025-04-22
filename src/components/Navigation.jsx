@@ -9,7 +9,7 @@ export default function Navigation({ categories = [], aboutInfo = null }) {
   const pathname = usePathname();
 
   // Extract contact details with fallbacks
-  const email = aboutInfo?.email || "yourname@gmail.com";
+  const email = aboutInfo?.email || "vanjaehellstrom@gmail.com";
   const phoneNumber = aboutInfo?.phoneNumber || "+46000000000";
   const instagramUrl = aboutInfo?.instagram || "https://instagram.com";
   const shortDescription =

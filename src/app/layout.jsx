@@ -1,3 +1,6 @@
+"use client"; // Convert RootLayout to a Client Component
+
+import React, { useState, useEffect } from "react"; // Import hooks
 import { Inter } from "next/font/google";
 import "@/app/globals.css";
 import { contentfulClient } from "@/lib/contentfulClient"; // Import Contentful client
@@ -7,39 +10,53 @@ import Navigation from "@/components/Navigation"; // Import Navigation component
 const inter = Inter({ subsets: ["latin"] });
 
 // Metadata can be exported directly in JS/JSX files
-export const metadata = {
-  title: "Vanjas Portfolio",
-  description: "My portfolio",
-};
+// export const metadata = {
+//   title: "Vanjas Portfolio",
+//   description: "My portfolio",
+// };
 
-// Fetch data for Navigation
-async function getNavigationData() {
-  let categories = [];
-  let aboutInfo = null;
-  try {
-    const categoryResponse = await contentfulClient.getEntries({
-      content_type: "categories",
-      select: "fields.name,fields.slug",
-      order: "fields.name",
-    });
-    categories = categoryResponse.items;
+// RootLayout is now a Client Component
+export default function RootLayout({ children }) {
+  // State for navigation data
+  const [categories, setCategories] = useState([]);
+  const [aboutInfo, setAboutInfo] = useState(null);
+  const [loadingNav, setLoadingNav] = useState(true);
+  const [errorNav, setErrorNav] = useState(null);
 
-    const aboutResponse = await contentfulClient.getEntries({
-      content_type: "about",
-      limit: 1,
-    });
-    if (aboutResponse.items.length > 0) {
-      aboutInfo = aboutResponse.items[0].fields;
-    }
-  } catch (error) {
-    console.error("Error fetching navigation data in layout:", error);
-  }
-  return { categories, aboutInfo };
-}
+  useEffect(() => {
+    const fetchNavData = async () => {
+      setLoadingNav(true);
+      setErrorNav(null);
+      try {
+        // Fetch categories
+        const categoryResponse = await contentfulClient.getEntries({
+          content_type: "categories", // Assuming 'categories' is the correct ID
+          select: "sys.id,fields.name,fields.slug", // Select necessary fields
+          order: "fields.name",
+        });
+        setCategories(categoryResponse.items || []);
 
-// Make layout async to fetch data
-export default async function RootLayout({ children }) {
-  const { categories, aboutInfo } = await getNavigationData();
+        // Fetch about info
+        const aboutResponse = await contentfulClient.getEntries({
+          content_type: "about", // Assuming 'about' is the correct ID
+          limit: 1,
+        });
+        if (aboutResponse.items.length > 0) {
+          setAboutInfo(aboutResponse.items[0].fields);
+        }
+      } catch (error) {
+        console.error(
+          "Error fetching navigation data in layout (client-side):",
+          error
+        );
+        setErrorNav("Failed to load navigation data.");
+      } finally {
+        setLoadingNav(false);
+      }
+    };
+
+    fetchNavData();
+  }, []); // Empty dependency array, fetch once on mount
 
   return (
     <html lang="en">
@@ -48,8 +65,18 @@ export default async function RootLayout({ children }) {
         {/* Mimic structure from page.jsx */}
         <div className="page-wrapper">
           <div className="main-wrapper">
-            {/* Render Navigation with fetched data */}
-            <Navigation categories={categories} aboutInfo={aboutInfo} />
+            {/* Render Navigation with state data, handle loading/error */}
+            {loadingNav ? (
+              <div className="page-head">
+                <p>Loading navigation...</p>
+              </div> // Basic loading indicator
+            ) : errorNav ? (
+              <div className="page-head">
+                <p>Error loading navigation: {errorNav}</p>
+              </div> // Basic error indicator
+            ) : (
+              <Navigation categories={categories} aboutInfo={aboutInfo} />
+            )}
             {/* Render the rest of the page content */}
             {children}
           </div>
