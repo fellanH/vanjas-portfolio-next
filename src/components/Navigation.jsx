@@ -29,6 +29,15 @@ export default function Navigation({ categories = [], aboutInfo = null }) {
         </Link>
         <div className="list padding">
           <p className="text">
+            <a
+              href="/Vanja-CV.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="new_link">
+              Mitt CV
+            </a>
+          </p>
+          <p className="text">
             {shortDescription}
             <br />
           </p>
