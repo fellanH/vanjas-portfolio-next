@@ -1,8 +1,8 @@
 "use client"; // No longer needed for useState
 
 import React from "react";
-import Image from "next/image";
 import Masonry from "react-masonry-css"; // Import Masonry
+import ShimmerImage from "./ShimmerImage"; // Changed from next/image
 
 // Define breakpoint columns for Masonry layout
 const breakpointColumnsObj = {
@@ -46,7 +46,7 @@ export default function ImageGallery({
 
           // Original Image component
           const originalImageElement = (
-            <Image
+            <ShimmerImage // Changed from Image
               key={item.id} // Key needed here for plain image case
               src={imageUrl}
               alt={item.altText}

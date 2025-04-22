@@ -6,6 +6,7 @@ import { contentfulClient } from "@/lib/contentfulClient"; // Import the client
 import Navigation from "@/components/Navigation"; // Import the Navigation component
 // Import the existing ImageGallery component
 import ImageGallery from "@/components/ImageGallery";
+import ShimmerImage from "@/components/ShimmerImage"; // Changed import path
 
 // Renamed from HomePage, component is now a Client Component
 export default function Page() {
@@ -107,7 +108,7 @@ export default function Page() {
   return (
     <div>
       <div className="layout-1">
-        <Image
+        <ShimmerImage
           src="/images/2-min.png"
           width={2048}
           height={1152}
@@ -118,7 +119,7 @@ export default function Page() {
         />
         <div className="parallax_image"></div>
         <div className="image-wrapper">
-          <Image
+          <ShimmerImage
             src="/images/1-min.png"
             width={2048}
             height={1152}

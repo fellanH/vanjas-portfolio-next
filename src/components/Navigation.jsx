@@ -27,7 +27,7 @@ export default function Navigation({ categories = [], aboutInfo = null }) {
         <Link href="/about" className="heading link">
           About --&gt;
         </Link>
-        <div className="list padding">
+        <div className="list">
           <p className="text">
             <a
               href="/Vanja-CV.pdf"

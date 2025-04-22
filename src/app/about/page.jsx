@@ -7,6 +7,7 @@ import { documentToReactComponents } from "@contentful/rich-text-react-renderer"
 import { contentfulClient } from "@/lib/contentfulClient";
 import { notFound } from "next/navigation";
 import Navigation from "@/components/Navigation"; // Keep Navigation if still needed visually
+import ShimmerImage from "@/components/ShimmerImage"; // Changed import path
 
 // Remove local client initialization and server-side env var checks
 // const spaceId = process.env.CONTENTFUL_SPACE_ID;
@@ -121,7 +122,7 @@ export default function AboutPage() {
           <div className="grid-spacer"></div>
           {imageUrl && imageWidth && imageHeight ? (
             <div>
-              <Image
+              <ShimmerImage
                 src={imageUrl.startsWith("//") ? `https:${imageUrl}` : imageUrl}
                 alt={imageAlt}
                 width={imageWidth}
