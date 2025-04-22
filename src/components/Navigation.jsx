@@ -34,10 +34,10 @@ export default function Navigation({ categories = [], aboutInfo = null }) {
               target="_blank"
               rel="noopener noreferrer"
               className="new_link">
-              Mitt CV
+              CV
             </a>
           </p>
-          <p className="text">
+          <p className="text" style={{ textWrap: "balance" }}>
             {shortDescription}
             <br />
           </p>
