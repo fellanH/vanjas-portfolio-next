@@ -9,6 +9,9 @@ import {
 import Navigation from "@/components/Navigation";
 import ImageGallery from "@/components/ImageGallery";
 
+// Add runtime export for Cloudflare Pages compatibility
+export const runtime = "edge";
+
 // Remove generateStaticParams function entirely
 // export async function generateStaticParams() { ... }
 

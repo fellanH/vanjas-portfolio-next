@@ -6,6 +6,9 @@ import { getProjectBySlug } from "@/lib/contentfulClient";
 import Navigation from "@/components/Navigation";
 import ImageGallery from "@/components/ImageGallery";
 
+// Add runtime export for Cloudflare Pages compatibility
+export const runtime = "edge";
+
 // Remove build-time environment variable checks
 // if (!CONTENTFUL_PROJECT_TYPE_ID || !CONTENTFUL_CATEGORY_TYPE_ID) { ... }
 
