@@ -354,6 +354,7 @@ ol {
   overflow: hidden;
   width: 100%;
   height: auto;
+  z-index: 1;
 }
 
 .aspect-ratio-square {
@@ -543,6 +544,7 @@ ol {
   opacity: 0;
   transition: opacity 0.3s ease-in-out;
   pointer-events: none; /* Allow clicks to pass through initially */
+  z-index: 2;
 }
 
 /* Show overlay on wrapper hover */
